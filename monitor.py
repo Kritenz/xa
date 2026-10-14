@@ -11,13 +11,20 @@ from selenium.webdriver.support import expected_conditions as EC
 URL_EVENTO = 'https://www.movistararena.com.ar/show/949f1877-625b-479f-893a-1ae09da0f00f'
 SELECTOR_BOTON = "span.mud-button-label"
 
+# True = te avisa SIEMPRE (para probar). False = solo avisa cuando hay "comprar".
+MODO_PRUEBA = True
+
 
 def avisar_telegram(mensaje):
-    requests.post(
-        f"https://api.telegram.org/bot{os.environ['TELEGRAM_TOKEN']}/sendMessage",
-        data={"chat_id": os.environ["TELEGRAM_CHAT_ID"], "text": mensaje},
-        timeout=10,
-    )
+    try:
+        r = requests.post(
+            f"https://api.telegram.org/bot{os.environ['TELEGRAM_TOKEN']}/sendMessage",
+            data={"chat_id": os.environ["TELEGRAM_CHAT_ID"], "text": mensaje},
+            timeout=10,
+        )
+        print(f"Respuesta de Telegram: {r.status_code} {r.text}")
+    except Exception as e:
+        print(f"Error al enviar a Telegram: {e}")
 
 
 def leer_botones(driver):
@@ -28,44 +35,48 @@ def leer_botones(driver):
             if el.is_displayed():
                 textos.append(el.text.strip().lower())
         except Exception:
-            continue  # Blazor re-renderizó el elemento mientras lo leíamos
+            continue
     return textos
 
 
 def revisar_pagina(driver):
+    """Devuelve: 'comprar', 'agotado', 'desconocido' o 'error'."""
     try:
         driver.get(URL_EVENTO)
 
-        # Espera a que Blazor renderice al menos un botón
         WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, SELECTOR_BOTON))
         )
-        time.sleep(1.5)  # margen por si el texto cambia tras el primer render
+        time.sleep(1.5)
 
         botones = leer_botones(driver)
         print(f"Botones encontrados: {botones}")
 
         if any("comprar" in b for b in botones):
-            return True
+            return "comprar"
         if any("agotado" in b for b in botones):
             print("Sigue AGOTADO.")
-        else:
-            print("Estado desconocido.")
+            return "agotado"
+        print("Estado desconocido.")
+        return "desconocido"
 
     except Exception as e:
         print(f"Ocurrió un error: {e}")
-
-    return False
+        return "error"
 
 
 def main():
     options = Options()
-    options.add_argument("-headless")  # obligatorio en un servidor
+    options.add_argument("-headless")
     driver = webdriver.Firefox(options=options)
     try:
-        if revisar_pagina(driver):
+        estado = revisar_pagina(driver)
+        print(f"Estado final: {estado}")
+
+        if estado == "comprar":
             avisar_telegram(f"🚨 ¡HAY BOTÓN COMPRAR! {URL_EVENTO}")
-            print("Aviso enviado por Telegram.")
+        elif MODO_PRUEBA:
+            avisar_telegram(f"🧪 Prueba: estado = {estado}")
     finally:
         driver.quit()
 
