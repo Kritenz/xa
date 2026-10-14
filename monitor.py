@@ -125,7 +125,7 @@ def main():
             )
         elif MODO_PRUEBA:
             avisar_telegram(
-                f"🧪 Prueba: {estado}\n" + resumen_completo(funciones)
+                f"🧪 papa: {estado}\n" + resumen_completo(funciones)
             )
     finally:
         driver.quit()
