@@ -11,15 +11,14 @@ from selenium.webdriver.support import expected_conditions as EC
 URL_EVENTO = 'https://www.movistararena.com.ar/show/993a2d46-39d7-4455-b199-87a5a2dc9b83'
 SELECTOR_FILA = "div.evento-row"
 
-# True = te avisa SIEMPRE con el resumen de todas las fechas (para probar).
-# False = solo avisa cuando hay entradas disponibles.
-MODO_PRUEBA = True
+# False = solo avisa cuando hay entradas disponibles (no molesta si está agotado).
+MODO_PRUEBA = False
 
 # Fechas que NO querés que disparen aviso (formato "día mes", en minúsculas).
 FECHAS_IGNORAR = ["06 febrero"]
 
 # Si querés avisos solo de ciertas fechas, completá la lista. Vacía = cualquiera.
-FECHAS_INTERES = []   # ejemplo: ["13 noviembre", "14 noviembre"]
+FECHAS_INTERES = []    # ejemplo: ["13 noviembre", "14 noviembre"]
 
 
 def avisar_telegram(mensaje):
@@ -109,11 +108,14 @@ def resumen_completo(funciones):
 def main():
     options = Options()
     options.add_argument("-headless")
+    
+    # Aseguramos el uso de Firefox tal como lo tenías configurado
     driver = webdriver.Firefox(options=options)
     try:
         estado, funciones, para_avisar = revisar_pagina(driver)
         print(f"Estado final: {estado}")
 
+        # Solo envía alerta si detecta entradas disponibles para comprar
         if estado == "comprar":
             nuevas = [f"📅 {f['fecha']} ({f['horarios']})" for f in para_avisar]
             avisar_telegram(
@@ -123,10 +125,9 @@ def main():
                 + resumen_completo(funciones)
                 + f"\n\n{URL_EVENTO}"
             )
-        elif MODO_PRUEBA:
-            avisar_telegram(
-                f"🧪 papa: {estado}\n" + resumen_completo(funciones)
-            )
+        else:
+            print("No hay entradas disponibles. No se envía mensaje.")
+            
     finally:
         driver.quit()
 
