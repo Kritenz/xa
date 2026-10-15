@@ -8,7 +8,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-URL_EVENTO = 'https://www.movistararena.com.ar/show/949f1877-625b-479f-893a-1ae09da0f00f'
+URL_EVENTO = 'https://www.movistararena.com.ar/show/b6062578-f485-4191-bc02-8fb51a8f145f'
 SELECTOR_FILA = "div.evento-row"
 
 MODO_PRUEBA = False
