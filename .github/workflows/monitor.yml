@@ -1,9 +1,9 @@
 name: Monitor entradas
 
 on:
-  schedule:
-    - cron: "*/10 * * * *"
-  workflow_dispatch:
+  repository_dispatch:
+    types: [ejecutar-monitor] # Evento personalizado que disparará el cron externo
+  workflow_dispatch:          # Te permite seguir ejecutándolo manualmente desde la web
 
 concurrency:
   group: monitor-entradas
