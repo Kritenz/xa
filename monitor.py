@@ -15,19 +15,15 @@ MODO_PRUEBA = False
 
 
 def avisar_telegram(mensaje):
-    """Envía el mensaje a Telegram con reintentos y mayor timeout por si la red parpadea."""
+    """Envía el mensaje a Telegram una sola vez de forma limpia."""
     url = f"https://api.telegram.org/bot{os.environ['TELEGRAM_TOKEN']}/sendMessage"
     payload = {"chat_id": os.environ["TELEGRAM_CHAT_ID"], "text": mensaje}
     
-    for intento in range(3):
-        try:
-            r = requests.post(url, data=payload, timeout=20)
-            print(f"Respuesta de Telegram: {r.status_code} {r.text}")
-            if r.status_code == 200:
-                return  # ¡Enviado con éxito!
-        except Exception as e:
-            print(f"Intento {intento + 1} - Error al enviar a Telegram: {e}")
-            time.sleep(3)
+    try:
+        r = requests.post(url, data=payload, timeout=15)
+        print(f"Respuesta de Telegram: {r.status_code} {r.text}")
+    except Exception as e:
+        print(f"Error al enviar a Telegram: {e}")
 
 
 def leer_funciones(driver):
