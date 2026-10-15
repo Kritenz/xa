@@ -11,20 +11,23 @@ from selenium.webdriver.support import expected_conditions as EC
 URL_EVENTO = 'https://www.movistararena.com.ar/show/993a2d46-39d7-4455-b199-87a5a2dc9b83'
 SELECTOR_FILA = "div.evento-row"
 
-# False = solo avisa cuando hay entradas disponibles (silencioso si no hay nada).
 MODO_PRUEBA = False
 
 
 def avisar_telegram(mensaje):
-    try:
-        r = requests.post(
-            f"https://api.telegram.org/bot{os.environ['TELEGRAM_TOKEN']}/sendMessage",
-            data={"chat_id": os.environ["TELEGRAM_CHAT_ID"], "text": mensaje},
-            timeout=10,
-        )
-        print(f"Respuesta de Telegram: {r.status_code} {r.text}")
-    except Exception as e:
-        print(f"Error al enviar a Telegram: {e}")
+    """Envía el mensaje a Telegram con reintentos y mayor timeout por si la red parpadea."""
+    url = f"https://api.telegram.org/bot{os.environ['TELEGRAM_TOKEN']}/sendMessage"
+    payload = {"chat_id": os.environ["TELEGRAM_CHAT_ID"], "text": mensaje}
+    
+    for intento in range(3):
+        try:
+            r = requests.post(url, data=payload, timeout=20)
+            print(f"Respuesta de Telegram: {r.status_code} {r.text}")
+            if r.status_code == 200:
+                return  # ¡Enviado con éxito!
+        except Exception as e:
+            print(f"Intento {intento + 1} - Error al enviar a Telegram: {e}")
+            time.sleep(3)
 
 
 def leer_funciones(driver):
@@ -51,7 +54,7 @@ def leer_funciones(driver):
                 "estado": estado,
             })
         except Exception:
-            continue  # Blazor re-renderizó la fila mientras la leíamos
+            continue
     return funciones
 
 
@@ -75,7 +78,6 @@ def revisar_pagina(driver):
         for f in funciones:
             if "comprar" not in f["estado"]:
                 continue
-            # Se eliminaron los filtros de FECHAS_IGNORAR y FECHAS_INTERES
             para_avisar.append(f)
 
         if para_avisar:
@@ -105,7 +107,6 @@ def main():
         estado, funciones, para_avisar = revisar_pagina(driver)
         print(f"Estado final: {estado}")
 
-        # Solo envía alerta si detecta entradas disponibles para comprar
         if estado == "comprar":
             nuevas = [f"📅 {f['fecha']} ({f['horarios']})" for f in para_avisar]
             avisar_telegram(
