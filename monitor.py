@@ -11,14 +11,8 @@ from selenium.webdriver.support import expected_conditions as EC
 URL_EVENTO = 'https://www.movistararena.com.ar/show/993a2d46-39d7-4455-b199-87a5a2dc9b83'
 SELECTOR_FILA = "div.evento-row"
 
-# False = solo avisa cuando hay entradas disponibles (no molesta si está agotado).
+# False = solo avisa cuando hay entradas disponibles (silencioso si no hay nada).
 MODO_PRUEBA = False
-
-# Fechas que NO querés que disparen aviso (formato "día mes", en minúsculas).
-FECHAS_IGNORAR = ["06 febrero"]
-
-# Si querés avisos solo de ciertas fechas, completá la lista. Vacía = cualquiera.
-FECHAS_INTERES = []    # ejemplo: ["13 noviembre", "14 noviembre"]
 
 
 def avisar_telegram(mensaje):
@@ -81,10 +75,7 @@ def revisar_pagina(driver):
         for f in funciones:
             if "comprar" not in f["estado"]:
                 continue
-            if f["clave"] in FECHAS_IGNORAR:
-                continue
-            if FECHAS_INTERES and f["clave"] not in FECHAS_INTERES:
-                continue
+            # Se eliminaron los filtros de FECHAS_IGNORAR y FECHAS_INTERES
             para_avisar.append(f)
 
         if para_avisar:
@@ -109,7 +100,6 @@ def main():
     options = Options()
     options.add_argument("-headless")
     
-    # Aseguramos el uso de Firefox tal como lo tenías configurado
     driver = webdriver.Firefox(options=options)
     try:
         estado, funciones, para_avisar = revisar_pagina(driver)
